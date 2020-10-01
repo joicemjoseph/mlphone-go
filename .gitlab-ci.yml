@@ -1,0 +1,24 @@
+stages:
+  - lint
+  - test
+  - build
+# note: we make cache global to reuse it across all jobs and stages.
+cache:
+  paths:
+    - .cache # define cache folders
+
+.job_template: # job template that is extended by other jobs
+  image: golang:1.14-buster
+  before_script:
+    - apt-get update 
+    - apt-get install make git # add your dependencies here
+    - go get -u github.com/knadh/stuffbin/...
+    - export PATH=$PATH:$CI_PROJECT_DIR/.cache:$CI_PROJECT_DIR/.cache/bin
+
+test:
+  extends: .job_template
+  stage: test
+  coverage: '/^total:\t+\(statements\)\t+(\d+\.\d+)%/'
+  script:
+    - go test -timeout 10s $(go list ./...) -v -coverprofile=coverage.out
+    - go tool cover -func=coverage.out
