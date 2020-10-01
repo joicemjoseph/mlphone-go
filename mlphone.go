@@ -123,10 +123,11 @@ var modifiers = map[string]string{
 }
 
 var (
-	regexKey0, _         = regexp.Compile(`[1,2,4-9]`)
-	regexKey1, _         = regexp.Compile(`[2,4-9]`)
-	regexNonMalayalam, _ = regexp.Compile(`[\P{Malayalam}]`)
-	regexAlphaNum, _     = regexp.Compile(`[^0-9A-Z]`)
+	rxKey0, _         = regexp.Compile(`[1,2,4-9]`)
+	rxKey1, _         = regexp.Compile(`[2,4-9]`)
+	rxNonMalayalam, _ = regexp.Compile(`[\P{Malayalam}]`)
+	rxAlphaNum, _     = regexp.Compile(`[^0-9A-Z]`)
+	rxSpecialCase, _  = regexp.Compile(`^(A|V|T|S|U|M|O)L(K|S)`)
 )
 
 // MLPhone is the Malayalam-phone tokenizer.
@@ -141,35 +142,38 @@ func New() *MLPhone {
 	var (
 		glyphs []string
 		mods   []string
-		kn     = &MLPhone{}
+		ml     = &MLPhone{}
 	)
 
 	// modifiers.
-	for k := range modifiers {
-		mods = append(mods, k)
+	for m := range modifiers {
+		mods = append(mods, m)
 	}
 
 	// compounds.
-	for k := range compounds {
-		glyphs = append(glyphs, k)
+	for c := range compounds {
+		glyphs = append(glyphs, c)
 	}
-	kn.modCompounds, _ = regexp.Compile(`((` + strings.Join(glyphs, "|") + `)(` + strings.Join(mods, "|") + `))`)
+
+	ml.modCompounds, _ = regexp.Compile(`((` + strings.Join(glyphs, "|") + `)(` + strings.Join(mods, "|") + `))`)
 
 	// consonants.
 	glyphs = []string{}
 	for k := range consonants {
 		glyphs = append(glyphs, k)
 	}
-	kn.modConsonants, _ = regexp.Compile(`((` + strings.Join(glyphs, "|") + `)(` + strings.Join(mods, "|") + `))`)
+
+	ml.modConsonants, _ = regexp.Compile(`((` + strings.Join(glyphs, "|") + `)(` + strings.Join(mods, "|") + `))`)
 
 	// vowels.
 	glyphs = []string{}
 	for k := range vowels {
 		glyphs = append(glyphs, k)
 	}
-	kn.modVowels, _ = regexp.Compile(`((` + strings.Join(glyphs, "|") + `)(` + strings.Join(mods, "|") + `))`)
 
-	return kn
+	ml.modVowels, _ = regexp.Compile(`((` + strings.Join(glyphs, "|") + `)(` + strings.Join(mods, "|") + `))`)
+
+	return ml
 }
 
 // Encode encodes a unicode Malayalm string to its Roman MLPhone hash.
@@ -180,18 +184,18 @@ func (ml *MLPhone) Encode(input string) (string, string, string) {
 	key2 := ml.process(input)
 
 	// key1 loses numeric modifiers that denote phonetic modifiers.
-	key1 := regexKey1.ReplaceAllString(key2, "")
+	key1 := rxKey1.ReplaceAllString(key2, "")
 
 	// key0 loses numeric modifiers that denote hard sounds, doubled sounds,
 	// and phonetic modifiers.
-	key0 := regexKey0.ReplaceAllString(key2, "")
+	key0 := rxKey0.ReplaceAllString(key2, "")
 
 	return key0, key1, key2
 }
 
 func (ml *MLPhone) process(input string) string {
 	// Remove all non-malayalam characters.
-	input = regexNonMalayalam.ReplaceAllString(strings.Trim(input, ""), "")
+	input = rxNonMalayalam.ReplaceAllString(strings.Trim(input, ""), "")
 
 	// All character replacements are grouped between { and } to maintain
 	// separatability till the final step.
@@ -218,13 +222,21 @@ func (ml *MLPhone) process(input string) string {
 		input = strings.ReplaceAll(input, k, `{`+v+`}`)
 	}
 
+	// Replace chillu.
+	for k, v := range chillus {
+		input = strings.ReplaceAll(input, k, `{`+v+`}`)
+	}
+
 	// Replace all modifiers.
 	for k, v := range modifiers {
 		input = strings.ReplaceAll(input, k, v)
 	}
 
 	// Remove non alpha numeric characters (losing the bracket grouping).
-	return regexAlphaNum.ReplaceAllString(input, "")
+	input = rxAlphaNum.ReplaceAllString(input, "")
+
+	//  phonetic exceptions (uthsavam - ulsavam...)
+	return rxSpecialCase.ReplaceAllString(input, "${1}0$2")
 }
 
 func (ml *MLPhone) replaceModifiedGlyphs(input string, glyphs map[string]string, r *regexp.Regexp) string {
@@ -235,5 +247,6 @@ func (ml *MLPhone) replaceModifiedGlyphs(input string, glyphs map[string]string,
 			}
 		}
 	}
+
 	return input
 }
