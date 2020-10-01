@@ -49,5 +49,19 @@ be useful in tasks like spell checking, word suggestion etc.
 |രത്തം|R03|R03|R03|Rattham|RTM|
 |രധം|R03|R03|R03|Radham|RTHM|
 
+
+# Usage
+```go
+import 'gitlab.com/joice/mlphone-go'
+...
+...
+...
+
+phone := mlphone.New()
+val1, val2, val3 := phone.Encode("മണം")
+...
+...
+...
+```
 # License
 GNU AFFERO GENERAL PUBLIC LICENSE v3
