@@ -1,7 +1,5 @@
 stages:
-  - lint
   - test
-  - build
 # note: we make cache global to reuse it across all jobs and stages.
 cache:
   paths:
