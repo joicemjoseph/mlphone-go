@@ -1,5 +1,8 @@
 # MLPhone
-Rewriting [MLPhone](https://github.com/knadh/mlphone) to Go.
+![](https://gitlab.com/joice/mlphone-go/badges/master/coverage.svg)
+![](https://gitlab.com/joice/mlphone-go/badges/master/pipeline.svg)
+
+Rewriting [MLPhone](https://github.com/knadh/mlphone) to Go by porting [KNPhone](https://github.com/knadh/knphone).
 
 MLphone is a phonetic algorithm for indexing Malayalam words by their pronunciation, like Metaphone for English. The algorithm generates three Romanized phonetic keys (hashes) of varying phonetic affinities for a given Malayalam word.
 
@@ -64,4 +67,4 @@ val1, val2, val3 := phone.Encode("മണം")
 ...
 ```
 # License
-GNU AFFERO GENERAL PUBLIC LICENSE v3
+GNU GENERAL PUBLIC LICENSE v3
